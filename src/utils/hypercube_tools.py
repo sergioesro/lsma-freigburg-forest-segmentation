@@ -66,6 +66,7 @@ class HypercubeTools:
                     else:
                         idx += 1
         if save and name is not None:
+            # TODO: Change this to local but it is already created
             np.save(f"/content/gdrive/MyDrive/LSMA_Final_Project/datasets/freiburg_forest_annotated/train/gt_files/{name}",
                     gt_img)
         return gt_img
