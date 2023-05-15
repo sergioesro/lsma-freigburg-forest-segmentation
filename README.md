@@ -1,5 +1,5 @@
 # LSMA Freigburg Forest Project
-Final project for subject the MUTSC subject LSMA where [Freiburg Forest Dataset](http://deepscene.cs.uni-freiburg.de/segment_random/CITYSCAPES_RGB?da
+Final project for MUTSC subject, Large Scale Media Analytics (LSMA) where [Freiburg Forest Dataset](http://deepscene.cs.uni-freiburg.de/segment_random/CITYSCAPES_RGB?da
 taset=freiburgforest&model=FOREST_RGB) will be used.
 
 ## Description
