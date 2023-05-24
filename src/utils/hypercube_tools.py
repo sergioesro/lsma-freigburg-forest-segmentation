@@ -61,6 +61,11 @@ class HypercubeTools:
         hypercube = self.append_bands_hypercube(hypercube,evi_img)
         hypercube = self.append_bands_hypercube(hypercube,gt_img)
         return hypercube
+    
+    def create_small_hypercube(self, rgb_img, evi_img, gt_img):
+        hypercube = self.append_bands_hypercube(rgb_img,evi_img)
+        hypercube = self.append_bands_hypercube(hypercube,gt_img)
+        return hypercube
 
     
     def get_pixels_from_gt(self, hypercube, gt_value, num_bands=3, save=False, name=None):
@@ -205,13 +210,17 @@ class HypercubeTools:
         '''
         Translate from our grayscale image to our dictionary
         '''
-        rgb_gt = np.zeros(gt_image.shape)
+        rgb_gt = np.zeros((gt_image.shape[0], gt_image.shape[1], 3))
         if np.max(gt_image) >= 204:
             gt_image = gt_image*(5/255)
-        for i in range(len(gt_image[:,1,1])):
-            for j in range(len(gt_image[1,:,1])):
-                gt_px = gt_image[i,j,:]
-                rgb_gt[i,j,:] = np.array(GT_DICT[int(gt_px[0])])
+        for i in range(gt_image.shape[0]): # len(gt_image[:,1,1])
+            for j in range(gt_image.shape[1]): # len(gt_image[1,:,1])
+                if len(gt_image.shape) == 3:
+                    gt_px = gt_image[i,j,:]
+                    rgb_gt[i,j,:] = np.array(GT_DICT[int(gt_px[0])])
+                else:
+                    gt_px = gt_image[i,j]
+                    rgb_gt[i,j,:] = np.array(GT_DICT[int(gt_px)])
         if save and name is not None:
             # rgb_aux = Image.fromarray(np.uint8(rgb_gt))
             cv2.imwrite(f'src/datasets/results/img_gt_{name}.png', rgb_gt)

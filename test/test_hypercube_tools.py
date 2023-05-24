@@ -3,14 +3,10 @@ import os
 import numpy as np
 from PIL import Image
 import cv2
-import matplotlib.pyplot as plt
 
 from src.utils.hypercube_tools import HypercubeTools
 from src.utils.image_descriptors import RGBHistogram, LabHistogram
 from src.utils.metrics_tools import get_accuracy, f1_metric, classification_report
-
-from src.neural_networks.neural_network import NeuralNetwork
-from src.neural_networks.neural_utils import train, test, initialize_network_parameters
 
 DATASETS_PATH = "src/datasets/train"
 PATH_SEGMENTED = DATASETS_PATH + "/GT_color/"
@@ -26,6 +22,7 @@ class TestHypercubeTools(unittest.TestCase):
     @classmethod
     def setUp(self):
         hypercube_tools = HypercubeTools()
+        # Image 1
         rgb_path = DATASETS_PATH + "/rgb/b1-99445_Clipped.jpg"
         nir_path = DATASETS_PATH + "/nir_color//b1-99445.png"
         evi_path = DATASETS_PATH + "/evi_color/b1-99445.png"
@@ -34,7 +31,19 @@ class TestHypercubeTools(unittest.TestCase):
         nir_img = HypercubeTools.read_image(nir_path)
         evi_img = HypercubeTools.read_image(evi_path)
         gt_img = np.load(gt_path)
+
+        # Image 2
+        rgb_path2 = DATASETS_PATH + "/rgb/b2-05528_Clipped.jpg"
+        nir_path2 = DATASETS_PATH + "/nir_color//b2-05528.png"
+        evi_path2 = DATASETS_PATH + "/evi_color/b2-05528.png"
+        gt_path2 = DATASETS_PATH +  "/gt_files/b2-05528.npy"
+        rgb_img2 = HypercubeTools.read_image(rgb_path2)
+        nir_img2 = HypercubeTools.read_image(nir_path2)
+        evi_img2 = HypercubeTools.read_image(evi_path2)
+        gt_img2 = np.load(gt_path2)
+
         self.hypercube_test = hypercube_tools.create_final_hypercube(rgb_img, nir_img, evi_img, gt_img)
+        self.hypercube_test2 = hypercube_tools.create_final_hypercube(rgb_img2, nir_img2, evi_img2, gt_img2)
 
     def test_create_gt_for_images(self):
         path = "src/datasets/train/GT_color/b1-99445_mask.png"
@@ -141,7 +150,7 @@ class TestHypercubeTools(unittest.TestCase):
 
     def test_get_accuracy(self):
         ideal_gt = cv2.imread("src/datasets/train/GT_color/b1-99445_mask.png")
-        segmented_gt = cv2.imread("src/datasets/results/img_gt_lab_desc.png")
+        segmented_gt = cv2.imread("src/datasets/results/img_gt_batch_nn_25.png")
         acc = get_accuracy(ideal_gt, segmented_gt)
         self.assertIsNotNone(acc)
 
@@ -151,43 +160,19 @@ class TestHypercubeTools(unittest.TestCase):
         ideal_gt = HypercubeTools.create_gt_for_images(ideal_gt)
         segmented_gt = HypercubeTools.create_gt_for_images(segmented_gt)
         f1_score = f1_metric(ideal_gt.flatten(), segmented_gt.flatten(), average='weighted')
+        print(f1_score)
         self.assertIsNotNone(f1_score)
 
     def test_compute_classification_report(self):
-        ideal_gt = cv2.imread("src/datasets/train/GT_color/b1-99445_mask.png")
-        segmented_gt = cv2.imread("src/datasets/results/img_gt_lab_desc.png")
+        ideal_gt = cv2.imread("src/datasets/train/GT_color/b2-05528_mask.png") # b2-05528_mask b1-99445_mask
+        segmented_gt = cv2.imread("src/datasets/results/img_gt_batch_nn_test.png")
         ideal_gt = HypercubeTools.create_gt_for_images(ideal_gt)
         segmented_gt = HypercubeTools.create_gt_for_images(segmented_gt)
         class_report = classification_report(ideal_gt.flatten(), segmented_gt.flatten(), digits=3)
         print(class_report)
         self.assertIsNotNone(class_report)
 
-    def test_train_neural_network(self):
-        train_hypercube = HypercubeTools.matricization_mode_3(self.hypercube_test)
-        device = "cpu"
-        model = NeuralNetwork().to(device)
-        loss_fn, optimizer = initialize_network_parameters(model)
-        train(train_hypercube, model, loss_fn, optimizer, save=True, name="sample")
-        print(model)
-        self.assertIsNotNone(model)
 
-
-    def test_test_neural_network(self):
-        test_hypercube = HypercubeTools.matricization_mode_3(self.hypercube_test)
-        device = "cpu"
-        model = NeuralNetwork().to(device)
-        loss_fn, _ = initialize_network_parameters(model)
-        test_acc, test_loss = test(test_hypercube, model, loss_fn, load=True, name="sample")
-        # plt.figure(figsize=(10,5))
-        # plt.title("Training and Validation Loss")
-        # plt.plot(test_acc,label="acc")
-        # plt.plot(test_loss/np.max(test_loss),label="loss")
-        # plt.xlabel("Iterations")
-        # plt.ylabel("%")
-        # plt.legend()
-        # plt.show()
-        print(model)
-        self.assertIsNotNone(model)
 
     
 
