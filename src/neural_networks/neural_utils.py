@@ -118,29 +118,31 @@ def train_kfold(X, model, loss_fn, optimizer, epochs=1, k_folds=3, normalize=Tru
 def train_cnn(X, model, loss_fn, optimizer, epochs=3, normalize=True, save=False, name=None):
     for epoch in range(epochs):
         running_loss = 0.0
-        dataloader = HypercubeCNNDataset(X)
+        device='cpu'
+        dataloader =  DataLoader(HypercubeCNNDataset(X), batch_size=4, shuffle=True, num_workers=2)
         for i, data in enumerate(dataloader, 0):
             inputs, labels = data
 
+            inputs = inputs.to(device)
+            labels = labels.to(device)
             # zero the parameter gradients
             optimizer.zero_grad()
 
             # format inputs and labels
-            inputs = inputs.reshape(1, inputs.shape[2],  inputs.shape[0], inputs.shape[1])
-            labels = np.reshape(labels,(1,(inputs.shape[2]*inputs.shape[3])))
+            inputs = inputs.reshape(1, inputs.shape[3],  inputs.shape[1], inputs.shape[2])
+            # labels = np.reshape(labels,(1,(inputs.shape[1]*inputs.shape[2])))
             labels = torch.tensor(labels, dtype=torch.long)
 
             # forward + backward + optimize
             outputs = model(inputs.float())
-            loss = loss_fn(outputs, labels.float())
+            loss = loss_fn(outputs.flatten(), labels.flatten().float())
             loss.backward()
             optimizer.step()
 
             # print statistics
             running_loss += loss.item()
-            if i % 2000 == 1999:    # print every 2000 mini-batches
-                print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}')
-                running_loss = 0.0
+        print(f'Epoch {epoch + 1}/{epochs} | Loss: {running_loss/11000800}')
+        running_loss = 0.0
     if save and name is not None:
         print("Saving model, better loss obtained!")
         torch.save(model.state_dict(), f"src/datasets/neural_models/{name}.pt")
@@ -177,6 +179,34 @@ def test(X, X_shape, model, loss_fn, normalize=True, load=False, name=None, gene
         y_out = np.reshape(y_pred, (X_shape[0],X_shape[1]))
         return correct, test_loss, y_out
     return correct, test_loss, y_pred
+
+
+def test_CNN(X, model, loss_fn, normalize=True, load=False, name=None, generate_image=False):
+    dataloader =  DataLoader(HypercubeCNNDataset(X), batch_size=4, shuffle=True, num_workers=2)
+    device = get_device()
+    if load and name is not None:
+        model.load_state_dict(torch.load(f"src/datasets/neural_models/{name}.pt"))
+    model.eval()
+    test_loss, correct = 0, 0
+    with torch.no_grad():
+        for i, data in enumerate(dataloader, 0):
+            inputs, labels = data
+
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            # zero the parameter gradients
+
+            # format inputs and labels
+            inputs = inputs.reshape(1, inputs.shape[3],  inputs.shape[1], inputs.shape[2])
+            # labels = np.reshape(labels,(1,(inputs.shape[1]*inputs.shape[2])))
+            labels = torch.tensor(labels, dtype=torch.long)
+
+            # forward + backward + optimize
+            outputs = model(inputs.float())
+            loss = loss_fn(outputs.flatten(), labels.flatten().float())
+            test_loss += loss.item()
+    y_pred = outputs.reshape(outputs, (X[0].shape[0], X[0].shape[1]))
+    return y_pred
 
 
 def get_device():
@@ -229,14 +259,15 @@ class HypercubeCNNDataset(Dataset):
         self.transform = transform
 
     def __len__(self):
-        return len(self)
+        return len(self.hypercubes)
 
     def __getitem__(self, index):
-        hypercube = self.hypercubes[0][index][:,:,:-1]
-        if self.transform:
-            hypercube = self.transform(hypercube)
+        hypercube = self.hypercubes[index][:,:,:-1]
+        hypercube = normalize_standard(hypercube)
+        # hypercube = np.resize(hypercube, (483,880,9))
         hypercube = torch.from_numpy(hypercube)
-        labels = self.hypercubes[0][index][:,:,-1]
+        labels = self.hypercubes[index][:,:,-1]
+        # labels = np.resize(labels, (483,880))
         return hypercube, labels
 
 

@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 from src.utils.hypercube_tools import HypercubeTools
 
-from src.neural_networks.neural_network import NeuralNetwork, Net_KFold, CNN
-from src.neural_networks.neural_utils import train, train_kfold, train_cnn, test, initialize_network_parameters
+from src.neural_networks.neural_network import NeuralNetwork, NeuralNetworkDropout, Net_KFold, CNN
+from src.neural_networks.neural_utils import train, train_kfold, train_cnn, test, test_CNN, initialize_network_parameters
 
 DATASETS_PATH = "src/datasets/train"
 PATH_SEGMENTED = DATASETS_PATH + "/GT_color/"
@@ -50,7 +50,16 @@ class TestNeuralNetworks(unittest.TestCase):
         device = "cuda"
         model = NeuralNetwork().to(device)
         loss_fn, optimizer = initialize_network_parameters(model, lr=1e-4)
-        train(train_hypercube, model, loss_fn, optimizer, epochs=1, normalize=True, save=False, name="model_batch_norm", plot=True)
+        train(train_hypercube, model, loss_fn, optimizer, epochs=50, normalize=True, save=True, name="model_batch_norm_50", plot=True)
+        print(model)
+        self.assertIsNotNone(model)
+
+    def test_train_neural_network_dropout(self):
+        train_hypercube = HypercubeTools.matricization_mode_3(self.hypercube_test)
+        device = "cuda"
+        model = NeuralNetworkDropout().to(device)
+        loss_fn, optimizer = initialize_network_parameters(model, lr=1e-4)
+        train(train_hypercube, model, loss_fn, optimizer, epochs=50, normalize=True, save=True, name="model_batch_norm_50_dropout", plot=True)
         print(model)
         self.assertIsNotNone(model)
 
@@ -64,22 +73,30 @@ class TestNeuralNetworks(unittest.TestCase):
         self.assertIsNotNone(model)
 
     def test_train_CNN(self):
-        train_hypercubes = [self.hypercube_test, self.hypercube_test2]
-        model = CNN()
-        loss_fn, optimizer = initialize_network_parameters(model, lr=1e-6)
-        train_cnn([train_hypercubes], model, loss_fn, optimizer, save=True, name='model_cnn')
+        train_hypercubes = [self.hypercube_test] # , self.hypercube_test2
+        device = "cpu"
+        model = CNN().to(device)
+        loss_fn, optimizer = initialize_network_parameters(model, lr=1e-4)
+        train_cnn(train_hypercubes, model, loss_fn, optimizer, epochs=50, save=True, name='model_cnn')
         print(model)
         self.assertIsNotNone(model)
+
+    def test_test_CNN(self):
+        train_hypercubes = [self.hypercube_test] # , self.hypercube_test2
+        device = "cuda"
+        model = CNN().to(device)
+        loss_fn, _ = initialize_network_parameters(model, lr=1e-3)
+        test_CNN(train_hypercubes, model, loss_fn, normalize=True, load=True, name='model_cnn', generate_image=False)
 
     def test_test_neural_network(self):
         gt_pixels_path = "src/datasets/results/"
         hypercube = self.hypercube_test2
         test_hypercube = HypercubeTools.matricization_mode_3(hypercube)
         device = "cpu"
-        model = NeuralNetwork().to(device)
+        model = NeuralNetworkDropout().to(device)
         loss_fn, _ = initialize_network_parameters(model)
-        _, _, y_out = test(test_hypercube, hypercube.shape, model, loss_fn, normalize=True, load=True, name="model_batch_norm_25", generate_image=True)
-        rgb_y = HypercubeTools.translate_from_gt_to_rgb(y_out, save=True, name="batch_nn_test")
+        _, _, y_out = test(test_hypercube, hypercube.shape, model, loss_fn, normalize=True, load=True, name="model_batch_norm_50_dropout", generate_image=True)
+        rgb_y = HypercubeTools.translate_from_gt_to_rgb(y_out, save=True, name="batch_nn_50_test2_dropout")
         print(model)
         self.assertIsNotNone(model)
 

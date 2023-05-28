@@ -165,7 +165,7 @@ class TestHypercubeTools(unittest.TestCase):
 
     def test_compute_classification_report(self):
         ideal_gt = cv2.imread("src/datasets/train/GT_color/b2-05528_mask.png") # b2-05528_mask b1-99445_mask
-        segmented_gt = cv2.imread("src/datasets/results/img_gt_batch_nn_test.png")
+        segmented_gt = cv2.imread("src/datasets/results/img_gt_batch_nn_50_test2.png")
         ideal_gt = HypercubeTools.create_gt_for_images(ideal_gt)
         segmented_gt = HypercubeTools.create_gt_for_images(segmented_gt)
         class_report = classification_report(ideal_gt.flatten(), segmented_gt.flatten(), digits=3)

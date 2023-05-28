@@ -21,6 +21,29 @@ class NeuralNetwork(nn.Module):
         return logits
     
 
+class NeuralNetworkDropout(nn.Module):
+    def __init__(self):
+        super().__init__()
+        #self.flatten = nn.Flatten()
+        self.linear_relu_stack = nn.Sequential(
+            nn.Dropout(0.2),
+            nn.Linear(9, 32),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(16, 8),
+            nn.ReLU(),
+            nn.Linear(8, 5)
+        )
+
+    def forward(self, x):
+        #x = self.flatten(x)
+        logits = self.linear_relu_stack(x)
+        return logits
+    
+
 class Net_KFold(nn.Module):
     def __init__(self, num_classes):
         super(Net_KFold, self).__init__()
